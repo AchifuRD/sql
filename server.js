@@ -24,14 +24,49 @@ async function initializeDatabase() {
     try {
         const client = await pool.connect();
         console.log('✅ Connected to PostgreSQL');
+
+        // Auto-create tables for easier deployment
+        await createTables(client);
+
         client.release();
     } catch (err) {
         console.error('❌ PostgreSQL connection error:', err.message);
         console.log('\n📝 For Cloud Deployment (Render):');
         console.log('   - Ensure DATABASE_URL environment variable is set');
-        console.log('\n📝 For Local Development:');
-        console.log('   - Ensure PostgreSQL is installed and running');
-        console.log('   - Create database "crossplatformdb"');
+    }
+}
+
+// Create tables if they don't exist
+async function createTables(client) {
+    try {
+        // Create ContactSubmissions table
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS contact_submissions (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                email VARCHAR(255) NOT NULL,
+                message TEXT,
+                platform VARCHAR(50),
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+
+        // Create UserData table
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS user_data (
+                id SERIAL PRIMARY KEY,
+                data_key VARCHAR(255),
+                data_value TEXT,
+                platform VARCHAR(50),
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+
+        console.log('✅ Database tables verified/created');
+    } catch (err) {
+        console.error('❌ Error creating tables:', err);
     }
 }
 
